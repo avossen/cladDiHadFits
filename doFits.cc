@@ -1,3 +1,4 @@
+#include "TGraphErrors.h"
 #include "TGraph2DErrors.h"
 #include "TF2.h"
 #include "TGaxis.h"
@@ -23,7 +24,7 @@
 using namespace std;
 
 
-void doFit(float*** vals,float& amp, float& ampErr,int numAngBins,float r)
+void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err,int numAngBins,float r)
 {
 
 
@@ -62,6 +63,12 @@ void doFit(float*** vals,float& amp, float& ampErr,int numAngBins,float r)
   TF2 f2("f2","[0]*sin(x)+[1]*sin(y-x)",0,2*M_PI,0,2*M_PI);
   f2.SetParameters(0.0,0.0);
   g.Fit(&f2);
+  amp1=f2.GetParameter(0);
+  amp2=f2.GetParameter(1);
+
+  amp1Err=f2.GetParError(0);
+  amp2Err=f2.GetParError(1);
+
 }
 
 
@@ -125,6 +132,14 @@ int main(int argc, char** argv)
       string srVal;
       float val;
       float rVal;
+
+      float y1[10];
+      float y2[10];
+      float x[10];
+
+      float ey1[10];
+      float ey2[10];
+      float ex[10];
       for(int iKinBin=0;iKinBin<numKinBins;iKinBin++)
 	{
 	  ssVals>>srVal;
@@ -143,13 +158,33 @@ int main(int argc, char** argv)
 		}
 	    }
 	  ////do fit
-	  float amp=0.0;
-	  float ampErr=0.0;
-	  doFit(vals,amp,ampErr,numAngBins,rVal);
+	  float amp1=0.0;
+	  float amp1Err=0.0;
 
-
+	  float amp2=0.0;
+	  float amp2Err=0.0;
+	  doFit(vals,amp1,amp1Err,amp2,amp2Err,numAngBins,rVal);
+	  y1[iKinBin]=amp1;
+	  ey1[iKinBin]=amp1Err;
+	  y2[iKinBin]=amp2;
+	  ey2[iKinBin]=amp2Err;
+	  x[iKinBin]=meanKin[iKinBin];
+	  ex[iKinBin]=0.0;
 	  ///////
+
 	}
+      TCanvas c;
+      TGraphErrors g1(numKinBins,x,y1,ex,ey1);
+      TGraphErrors g2(numKinBins,x,y2,ex,ey2);
+      c.Divide(2,1);
+      c.cd(1);
+      g1.Draw("ALP");
+      c.cd(2);
+      g2.Draw("ALP");
+      char buffer[300];
+      sprintf(buffer,"asym2DFit_out_%s.png",binningName.c_str());
+      c.SaveAs(buffer);
+
     }
 
 
