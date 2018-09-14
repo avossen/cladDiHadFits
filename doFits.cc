@@ -81,6 +81,7 @@ int main(int argc, char** argv)
   int maxAngBins=16;
   int maxKinBins=50;
   float* meanKin=new float[maxKinBins];
+  float* wyFactor=new float[maxKinBins];
   float*** vals=new float**[maxAngBins];
   for(int i=0;i<maxAngBins;i++)
     {
@@ -113,7 +114,9 @@ int main(int argc, char** argv)
       string binningName,sNumKinBins,sNumAngBins;
 
       string sKin;
+      string sWy;
       float kin=0;
+      float wy=0;
       getline(ssBinning,binningName,' ');
       getline(ssBinning,sNumKinBins,' ');
       getline(ssBinning,sNumAngBins,' ');
@@ -127,7 +130,13 @@ int main(int argc, char** argv)
 	  if(isnan(kin))
 	    kin=-1;
 	  meanKin[iKinBin]=kin;
+	  ssBinning>>sWy;
+	  wy=stof(sWy);
+	  if(isnan(wy))
+	    wy=-1000;
+	  wyFactor[iKinBin]=wy;
 	  cout <<" mean " << binningName <<" bin " << iKinBin <<": " << kin << endl;
+	  cout <<" wyfactor " << binningName <<" bin " << iKinBin <<": " << wy << endl;
 	}
 
       cout <<"binningName: "<< binningName<<", " << numKinBins<<", " << numAngBins<<endl;
@@ -175,8 +184,8 @@ int main(int argc, char** argv)
 	  if(meanKin[iKinBin]!=-1)
 	    {
 	      doFit(vals,amp1,amp1Err,amp2,amp2Err,numAngBins,rVal);
-	      y1[graphIndex ]=amp1;
-	      ey1[graphIndex]=amp1Err;
+	      y1[graphIndex ]=amp1/wyFactor[iKinBin];
+	      ey1[graphIndex]=amp1Err/wyFactor[iKinBin];
 	      y2[graphIndex]=amp2;
 	      ey2[graphIndex]=amp2Err;
 	      x[graphIndex]=meanKin[iKinBin];
