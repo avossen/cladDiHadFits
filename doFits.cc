@@ -1,3 +1,5 @@
+#include "TGraph2DErrors.h"
+#include "TF2.h"
 #include "TGaxis.h"
 #include "TStyle.h"
 #include "TLegend.h"
@@ -23,15 +25,20 @@ using namespace std;
 
 void doFit(float*** vals,float& amp, float& ampErr,int numAngBins,float r)
 {
+
+
+  TGraph2DErrors g;
   for(int iAngBin=0;iAngBin<numAngBins;iAngBin++)
     {
       for(int iAngBin2=0;iAngBin2<numAngBins;iAngBin2++)
 	{
+	  int pointIndex=iAngBin*numAngBins+iAngBin2;
 	  double N1 = vals[iAngBin][iAngBin2][0];
 	  double N2 = vals[iAngBin][iAngBin2][1];
 	  float y=0.0;
 	  float ey=0.0;
-	  float x=0.0;
+	  float x1=0.0;
+	  float x2=0.0;
 	  float ex=0.0;
 	  if ((N1 + r * N2) > 0) {
 	    y = (N1 - r * N2) / (N1 + r * N2);
@@ -40,14 +47,21 @@ void doFit(float*** vals,float& amp, float& ampErr,int numAngBins,float r)
 	      / ((N1 + r * N2) * (N1 + r * N2) * (N1 + r * N2) * (N1 + r * N2));
 	    ey = sqrt(ey);
 	  } else {
-	    cout <<"no counts for phi bin " << iAngBin << ", " << iAngBin2 << endl;
+	    //	    cout <<"no counts for phi bin " << iAngBin << ", " << iAngBin2 << endl;
 	    y = 0;
 	    //no counts... uncertainty high
 	    ey = 10000;
 	  }
-	  x = (iAngBin + 0.5) * 2 * M_PI / numAngBins;
+	  x1 = (iAngBin + 0.5) * 2 * M_PI / numAngBins;
+	  x2 = (iAngBin2 + 0.5) * 2 * M_PI / numAngBins;
+
+	  g.SetPoint(pointIndex,x1,x2,y);
+	  g.SetPointError(pointIndex,ex,ex,ey);
 	}
     }
+  TF2 f2("f2","[0]*sin(x)+[1]*sin(y-x)",0,2*M_PI,0,2*M_PI);
+  f2.SetParameters(0.0,0.0);
+  g.Fit(&f2);
 }
 
 
