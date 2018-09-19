@@ -26,7 +26,7 @@
 using namespace std;
 
 
-void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err,int numAngBins,float r)
+void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err,int numAngBins,float r, TH1D* hChi2)
 {
 
 
@@ -65,6 +65,8 @@ void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err
   TF2 f2("f2","[0]*sin(x)+[1]*sin(y-x)",0,2*M_PI,0,2*M_PI);
   f2.SetParameters(0.0,0.0);
   g.Fit(&f2);
+  hChi2->Fill(f2.GetChisquare()/f2.GetNDF());
+  cout <<"chi2/ndf: "<< f2.GetChisquare()/f2.GetNDF() <<" chi2: "<< f2.GetChisquare()<<" ndf: "<< f2.GetNDF()<<endl;
   amp1=f2.GetParameter(0);
   amp2=f2.GetParameter(1);
 
@@ -107,6 +109,7 @@ int main(int argc, char** argv)
   string line;
   int binIndex=0;  
   ///this tokenizes lines
+  TH1D* hChi2=new TH1D("hChi2","hChi2",20,0,5);
   while(getline(file,line))
     {
       //and this space
@@ -181,9 +184,10 @@ int main(int argc, char** argv)
 
 	  float amp2=0.0;
 	  float amp2Err=0.0;
+
 	  if(meanKin[iKinBin]!=-1)
 	    {
-	      doFit(vals,amp1,amp1Err,amp2,amp2Err,numAngBins,rVal);
+	      doFit(vals,amp1,amp1Err,amp2,amp2Err,numAngBins,rVal,hChi2);
 	      y1[graphIndex ]=amp1/wyFactor[iKinBin];
 	      ey1[graphIndex]=amp1Err/wyFactor[iKinBin];
 	      y2[graphIndex]=amp2;
@@ -240,7 +244,8 @@ int main(int argc, char** argv)
 	g2.GetXaxis()->SetTitle(xaxisLabel.c_str());
 	if(binIndex==4)
 	  {
-	    TF1 f1("f1","[0]",x[0],x[graphIndex]+0.1);
+	    //since we do it only for runs, but large number here...
+	    TF1 f1("f1","[0]",x[0]-100,x[graphIndex]+100);
 	    f1.SetParameter(0,0.0);
 	    g1.Fit(&f1);
 	    f1.SetParameter(0,0.0);
@@ -258,8 +263,12 @@ int main(int argc, char** argv)
       c.SaveAs(buffer);
       sprintf(buffer,"asym2DFit_out_%s.root",binningName.c_str());
       c.SaveAs(buffer);
-
     }
+
+
+  TCanvas c2;
+  hChi2->Draw();
+  c2.SaveAs("fitChi2.png");
 
 
   file.close();
