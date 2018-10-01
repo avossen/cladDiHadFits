@@ -29,7 +29,7 @@ using namespace std;
 void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err,int numAngBins,float r, TH1D* hChi2)
 {
 
-
+  cout <<"r: "<< r <<endl;
   TGraph2DErrors g;
   for(int iAngBin=0;iAngBin<numAngBins;iAngBin++)
     {
@@ -66,6 +66,7 @@ void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err
   f2.SetParameters(0.0,0.0);
   g.Fit(&f2);
   hChi2->Fill(f2.GetChisquare()/f2.GetNDF());
+
   cout <<"chi2/ndf: "<< f2.GetChisquare()/f2.GetNDF() <<" chi2: "<< f2.GetChisquare()<<" ndf: "<< f2.GetNDF()<<endl;
   amp1=f2.GetParameter(0);
   amp2=f2.GetParameter(1);
@@ -78,6 +79,7 @@ void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err
 
 int main(int argc, char** argv)
 {
+
   gStyle->SetOptFit();
   //lets assume that 16 is maxAngBins,
   int maxAngBins=16;
@@ -110,6 +112,7 @@ int main(int argc, char** argv)
   int binIndex=0;  
   ///this tokenizes lines
   TH1D* hChi2=new TH1D("hChi2","hChi2",20,0,5);
+  hChi2->GetXaxis()->SetTitle("#chi^{2}/NDF");
   while(getline(file,line))
     {
       //and this space
@@ -188,8 +191,8 @@ int main(int argc, char** argv)
 	  if(meanKin[iKinBin]!=-1)
 	    {
 	      doFit(vals,amp1,amp1Err,amp2,amp2Err,numAngBins,rVal,hChi2);
-	      y1[graphIndex ]=amp1/wyFactor[iKinBin];
-	      ey1[graphIndex]=amp1Err/wyFactor[iKinBin];
+	      y1[graphIndex ]=amp1;///wyFactor[iKinBin];
+	      ey1[graphIndex]=amp1Err;///wyFactor[iKinBin];
 	      y2[graphIndex]=amp2;
 	      ey2[graphIndex]=amp2Err;
 	      x[graphIndex]=meanKin[iKinBin];
@@ -225,7 +228,11 @@ int main(int argc, char** argv)
       if(binIndex==3)
 	xaxisLabel="x";
       if(binIndex==4)
+	{
 	xaxisLabel="run number";
+		g1.GetYaxis()->SetRangeUser(-0.2,0.2);
+		g2.GetYaxis()->SetRangeUser(-0.2,0.2);
+	}
 
 	g1.SetMarkerStyle(24);
 	g2.SetMarkerStyle(24);
