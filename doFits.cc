@@ -26,6 +26,8 @@
 using namespace std;
 
 
+//questionable runs: 4308, 4302 4032 4013, 4016, 4017 4068.82, 4073.62
+
 void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err,int numAngBins,float r, TH1D* hChi2)
 {
 
@@ -80,7 +82,10 @@ void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err
 int main(int argc, char** argv)
 {
 
+  float beamPolarization=0.8;
+  gStyle->SetOptTitle(0);
   gStyle->SetOptFit();
+  gStyle->SetOptStat(2211);
   //lets assume that 16 is maxAngBins,
   int maxAngBins=16;
   int maxKinBins=50;
@@ -113,6 +118,7 @@ int main(int argc, char** argv)
   ///this tokenizes lines
   TH1D* hChi2=new TH1D("hChi2","hChi2",20,0,5);
   hChi2->GetXaxis()->SetTitle("#chi^{2}/NDF");
+  //  hChi2->GetXaxis()->SetTitleSize(20);
   while(getline(file,line))
     {
       //and this space
@@ -190,11 +196,19 @@ int main(int argc, char** argv)
 
 	  if(meanKin[iKinBin]!=-1)
 	    {
+	      cout <<"do fit for binIndex: "<< binIndex<<" mean kin: "<< meanKin[iKinBin]<<endl;
 	      doFit(vals,amp1,amp1Err,amp2,amp2Err,numAngBins,rVal,hChi2);
-	      y1[graphIndex ]=amp1;///wyFactor[iKinBin];
-	      ey1[graphIndex]=amp1Err;///wyFactor[iKinBin];
+	      y1[graphIndex ]=amp1/wyFactor[iKinBin];
+	      ey1[graphIndex]=amp1Err/wyFactor[iKinBin];
 	      y2[graphIndex]=amp2;
 	      ey2[graphIndex]=amp2Err;
+
+	      //and correct for beam polarization
+	      y1[graphIndex]/=beamPolarization;
+	      ey1[graphIndex]/=beamPolarization;
+	      y2[graphIndex]/=beamPolarization;
+	      ey2[graphIndex]/=beamPolarization;
+
 	      x[graphIndex]=meanKin[iKinBin];
 	      ex[graphIndex]=0.0;
 	      graphIndex++;
@@ -229,7 +243,7 @@ int main(int argc, char** argv)
 	xaxisLabel="x";
       if(binIndex==4)
 	{
-	xaxisLabel="run number";
+	  xaxisLabel="run number";
 		g1.GetYaxis()->SetRangeUser(-0.2,0.2);
 		g2.GetYaxis()->SetRangeUser(-0.2,0.2);
 	}
@@ -249,33 +263,86 @@ int main(int argc, char** argv)
 	g1.GetXaxis()->SetTitle(xaxisLabel.c_str());
 	g2.GetXaxis()->SetLabelSize(0.04);
 	g2.GetXaxis()->SetTitle(xaxisLabel.c_str());
+
+	float meanAmp=0.0;
 	if(binIndex==4)
 	  {
 	    //since we do it only for runs, but large number here...
 	    TF1 f1("f1","[0]",x[0]-100,x[graphIndex]+100);
 	    f1.SetParameter(0,0.0);
 	    g1.Fit(&f1);
+	    //this is the first fit to the sin(phiR)!!
+	    meanAmp=f1.GetParameter(0);
 	    f1.SetParameter(0,0.0);
 	    g2.Fit(&f1);
+
+
+
 	  }
-      c.Divide(2,1);
-      TVirtualPad* pad1=c.cd(1);
-      pad1->SetLeftMargin(0.2);
+	//      c.Divide(2,1);
+	//      TVirtualPad* pad1=c.cd(1);
+	//      pad1->SetLeftMargin(0.2);
+
+	g1.SetMarkerStyle(20);
+	g1.SetLineWidth(2);
       g1.Draw("AP");
-      pad1=c.cd(2);
-      pad1->SetLeftMargin(0.3);
-      g2.Draw("AP");
+      gPad->Update();
+      TLine l(gPad->GetUxmin(),0.0,gPad->GetUxmax(),0.0);
+      l.Draw();
+      gPad->Update();
+      //      pad1=c.cd(2);
+      //      pad1->SetLeftMargin(0.3);
+      //      g2.Draw("AP");
       char buffer[300];
       sprintf(buffer,"asym2DFit_out_%s.png",binningName.c_str());
       c.SaveAs(buffer);
+      sprintf(buffer,"asym2DFit_out_%s.pdf",binningName.c_str());
+      c.SaveAs(buffer);
       sprintf(buffer,"asym2DFit_out_%s.root",binningName.c_str());
       c.SaveAs(buffer);
+      //do some more studies of the run dependendence
+	if(binIndex==4)
+	  {
+	    cout << "mean Amp: "<< meanAmp<<endl;
+	    TH1D pulls1D("pulls1D","pulls1D",20,-3.5,3.5);
+	    for(int i=0;i<graphIndex;i++)
+	      {
+		if(ey1[i]!=0)
+		  {
+		    y1[i]=(y1[i]-meanAmp)/ey1[i];
+		    pulls1D.Fill(y1[i]);
+		  }
+		cout <<"run: " << x[i] <<" pull: "<< y1[i] <<endl;
+	      }
+	    //	    pulls1D.Fit("gaus");
+	    //	    c.Divide(1,1);
+	    c.cd(0);
+	    TGraph g3(graphIndex,x,y1);
+	    g3.GetXaxis()->SetTitle("run number");
+	    g3.GetYaxis()->SetTitle("pull");
+	    g3.SetMarkerStyle(20);
+	    g3.SetMarkerSize(1);
+	    g3.Draw("AP");
+
+	    c.SaveAs("pullsRuns.png");
+	    c.SaveAs("pullsRuns.pdf");
+	    pulls1D.GetXaxis()->SetTitle("pull");
+	    pulls1D.Draw();
+	    c.SaveAs("pullsRuns1D.png");
+	    c.SaveAs("pullsRuns1D.pdf");
+
+
+
+	  }
+
     }
 
 
   TCanvas c2;
+  hChi2->GetXaxis()->SetTitle("fit #chi^{2}");
   hChi2->Draw();
   c2.SaveAs("fitChi2.png");
+  c2.SaveAs("fitChi2.pdf");
 
 
   file.close();
