@@ -1,3 +1,4 @@
+#include "TText.h"
 #include "TPad.h"
 #include "TGraphErrors.h"
 #include "TGraph2DErrors.h"
@@ -82,7 +83,7 @@ void doFit(float*** vals,float& amp1, float& amp1Err,float& amp2, float& amp2Err
 int main(int argc, char** argv)
 {
 
-  float beamPolarization=0.8;
+  float beamPolarization=0.85;
   gStyle->SetOptTitle(0);
   gStyle->SetOptFit();
   gStyle->SetOptStat(2211);
@@ -236,7 +237,7 @@ int main(int argc, char** argv)
       TGraphErrors g2(graphIndex,x,y2,ex,ey2);
       string xaxisLabel;
       if(binIndex==1)
-	xaxisLabel="M [GeV]";
+	xaxisLabel="M_{Inv} [GeV/c^{2}]";
       if(binIndex==2)
 	xaxisLabel="z";
       if(binIndex==3)
@@ -252,10 +253,10 @@ int main(int argc, char** argv)
 	g2.SetMarkerStyle(24);
 	g1.GetYaxis()->SetLabelSize(0.04);
 	g1.GetYaxis()->SetTitleSize(0.06);
-	g1.GetYaxis()->SetTitle("A^{sin(#phi_{R})}");
+	g1.GetYaxis()->SetTitle("A_{LU}^{sin(#phi_{R})}");
 	g2.GetYaxis()->SetTitleSize(0.06);
 	g2.GetYaxis()->SetLabelSize(0.04);
-	g2.GetYaxis()->SetTitle("A^{sin(#phi_{H}-#phi_{R})}");
+	g2.GetYaxis()->SetTitle("A_{LU}^{sin(#phi_{H}-#phi_{R})}");
 
 
 
@@ -279,9 +280,9 @@ int main(int argc, char** argv)
 
 
 	  }
-	//      c.Divide(2,1);
-	//      TVirtualPad* pad1=c.cd(1);
-	//      pad1->SetLeftMargin(0.2);
+	//	      c.Divide(2,1);
+	//	      TVirtualPad* pad1=c.cd(1);
+	//	      pad1->SetLeftMargin(0.2);
 
 	g1.SetMarkerStyle(20);
 	g1.SetLineWidth(2);
@@ -289,10 +290,26 @@ int main(int argc, char** argv)
       gPad->Update();
       TLine l(gPad->GetUxmin(),0.0,gPad->GetUxmax(),0.0);
       l.Draw();
+
+
+
+      TText *t;
+      //already incremented
+      if(binIndex==1)
+	t=new TText(0.5,0.02,"CLAS Preliminary");
+      if(binIndex==2)
+	t=new TText(0.4,0.06,"CLAS Preliminary");
+      if(binIndex==3)
+	t=new TText(0.2,0.12,"CLAS Preliminary");
+
+
+      t->SetTextFont(43);
+      t->SetTextSize(30);
+      t->Draw();
       gPad->Update();
-      //      pad1=c.cd(2);
-      //      pad1->SetLeftMargin(0.3);
-      //      g2.Draw("AP");
+      //            pad1=c.cd(2);
+      //            pad1->SetLeftMargin(0.3);
+      //          g2.Draw("AP");
       char buffer[300];
       sprintf(buffer,"asym2DFit_out_%s.png",binningName.c_str());
       c.SaveAs(buffer);
