@@ -1,9 +1,12 @@
 #!/bin/bash
 rm doFits
+rm readTxtToH
 CFLAGS=" -Wall -ggdb `root-config --cflags --libs`  -lMinuit -lRooFitCore -lRooFit"
 echo cflags: $CFLAGS
 #c++ $CFLAGS doAnalysis.cc -o doAnalysis
+c++ $CFLAGS readTxtToH.cc  -o readTxtToH
 c++ $CFLAGS doFits.cc  -o doFits
+
 #c++ $CFLAGS test2Sys.cc binning.cc sysDataGen.cc -o test2Sys
 #c++ $CFLAGS doAnalysis2.cc -o doAnalysis2
 #c++ $CFLAGS doSoBAnalysis.cc -o doSoBAnalysis
